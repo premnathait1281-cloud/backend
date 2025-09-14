@@ -1,0 +1,41 @@
+name: Deploy Node.js App to EC2 with PM2
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+
+      - name: Setup SSH
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+
+      - name: Deploy to EC2
+        run: |
+          ssh -o StrictHostKeyChecking=no ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }} << 'EOF'
+            set -e
+            cd ~
+            if [ ! -d "backend" ]; then
+              git clone https://github.com/premnathait1281-cloud/backend.git
+              cd backend
+            else
+              cd backend
+              git fetch origin
+              git reset --hard origin/main
+            fi
+            npm install --production
+            if pm2 describe backend > /dev/null; then
+              pm2 restart backend
+            else
+              pm2 start npm --name "backend" -- run start
+            fi
+            pm2 save
+          EOF
