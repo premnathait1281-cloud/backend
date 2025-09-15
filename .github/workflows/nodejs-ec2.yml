@@ -3,7 +3,7 @@ name: Deploy Node.js App to EC2 with PM2
 on:
   push:
     branches:
-      - main
+      - dev
 
 jobs:
   deploy:
